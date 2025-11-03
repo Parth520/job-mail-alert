@@ -31,13 +31,29 @@ connectDB();
 
 // Security middleware
 app.use(helmet());
+// CORS configuration for production
 app.use(cors({
-    origin: '*', // Allow all origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000', // Local development
+            'http://localhost:8080', // Alternative local
+            process.env.FRONTEND_URL, // Production frontend
+            'https://jobaltt.netlify.app/'
+        ];
 
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 // Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
@@ -61,6 +77,28 @@ app.use(errorHandler);
 
 // Start cron job for scraping
 scheduler.startJobScraping();
+
+// Production error handling
+if (process.env.NODE_ENV === 'production') {
+    // Don't expose error stack in production
+    app.use((err, req, res, next) => {
+        console.error(err.stack);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    });
+}
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+    logger.error(`Unhandled Rejection: ${err.message}`);
+    console.error('Unhandled Rejection:', err);
+    // Don't exit in production - log and continue
+    if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+    }
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
