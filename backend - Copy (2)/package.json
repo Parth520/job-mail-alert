@@ -6,7 +6,8 @@
     "scripts": {
         "start": "node server.js",
         "dev": "nodemon server.js",
-        "scrape": "node services/scheduler.js"
+        "scrape": "node services/scheduler.js",
+        "production": "NODE_ENV=production node server.js"
     },
     "dependencies": {
         "@sendgrid/mail": "^7.7.0",
