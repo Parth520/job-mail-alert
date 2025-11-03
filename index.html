@@ -1523,7 +1523,11 @@
 
     <script>
         // API Configuration - CHANGE THIS TO YOUR BACKEND URL
-        const API_BASE_URL = "http://localhost:5000/api";
+        // API Configuration - Auto-detect environment
+        const API_BASE_URL = window.location.hostname === 'localhost' ?
+            'http://localhost:5000/api' // Local development
+            :
+            'https://jobaltt.netlify.app/'; // Production (UPDATE THIS!)
 
         // API Helper Functions
         async function apiRequest(endpoint, options = {}) {
